@@ -13,4 +13,6 @@ I haven't made Premake/CMake thingy yet because I don't think it's necessary for
 I am still very much a beginner in C++, so I'm sorry if the code isn't clean or if there are mistakes in it.
 One thing to note if you aren't familiar with wxWidgets is that wx objects allocated on the heap don't need to be deleted, they will automatically get deleted with their parent object.
 
+Relies on https://github.com/leethomason/tinyxml2 for reading and parsing the splits file.
+
 and yeah thanks for using or contributing =)
