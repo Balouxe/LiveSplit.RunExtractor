@@ -6,6 +6,7 @@
 
 #include "wx/listctrl.h"
 #include "wx/grid.h"
+#include "wx/notebook.h"
 
 enum userActions {
 	ID_MENU_OPENFILE,
@@ -20,7 +21,8 @@ enum wxIDs {
 	ID_LISTCTRL,
 	ID_RUNPANEL,
 	ID_CATEGORY,
-	ID_GRID
+	ID_GRID,
+	ID_NOTEBOOK
 };
 
 class Application : public wxApp
@@ -44,16 +46,22 @@ public:
 	void ItemSelected(wxListEvent& event);
 
 	void InitList();
-	void InitGrid();
-	void RefreshGrid(const char* id);
+
+	void InitRealGrid();
+	void InitGameGrid();
+
+	void RefreshRealGrid(const char* id);
+	void RefreshGameGrid(const char* id);
 private:
 	bool m_showUnfinished = true;
 	wxPanel* m_runPanel;
 	wxBoxSizer* m_runSizer;
+	wxNotebook* m_notebook;
 	wxListCtrl* m_listCtrl;
 
 	wxStaticText* m_category;
-	wxGrid* m_grid;
+	wxGrid* m_realGrid;
+	wxGrid* m_gameGrid;
 };
 
 DECLARE_APP(Application)

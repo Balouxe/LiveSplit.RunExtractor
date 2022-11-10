@@ -61,13 +61,19 @@ MainFrame::MainFrame(const wxString& title)
 	Shared::fileio.GetInfo();
 
 	m_category = new wxStaticText(m_runPanel, ID_CATEGORY, Shared::fileio.info.GetTitle(), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL);
+	m_notebook = new wxNotebook(m_runPanel, ID_NOTEBOOK, wxDefaultPosition, wxDefaultSize);
 
-	m_grid = new wxGrid(m_runPanel, ID_GRID, wxDefaultPosition, wxDefaultSize);
-	m_grid->CreateGrid(Shared::fileio.info.nbSplits, 3, wxGrid::wxGridSelectCells);
-	InitGrid();
+	m_realGrid = new wxGrid(m_notebook, ID_GRID, wxDefaultPosition, wxDefaultSize);
+	m_realGrid->CreateGrid(Shared::fileio.info.nbSplits, 3, wxGrid::wxGridSelectCells);
+	m_notebook->AddPage(m_realGrid, "Real Time");
+	m_gameGrid = new wxGrid(m_notebook, ID_GRID, wxDefaultPosition, wxDefaultSize);
+	m_gameGrid->CreateGrid(Shared::fileio.info.nbSplits, 3, wxGrid::wxGridSelectCells);
+	m_notebook->AddPage(m_gameGrid, "Game Time");
+	InitRealGrid();
+	InitGameGrid();
 
 	m_runSizer->Add(m_category, wxSizerFlags().Expand());
-	m_runSizer->Add(m_grid, wxSizerFlags().Expand());
+	m_runSizer->Add(m_notebook, wxSizerFlags().Expand());
 
 	m_splitter->SplitVertically(m_listCtrl, m_runPanel);
 	m_runPanel->SetSizer(m_runSizer);
@@ -83,7 +89,8 @@ void MainFrame::ItemSelected(wxListEvent& event) {
 	info.m_itemId = event.m_itemIndex;
 	info.m_col = 0;
 	wxString id = m_listCtrl->GetItemText(info);
-	RefreshGrid(id);
+	RefreshRealGrid(id);
+	RefreshGameGrid(id);
 }
 
 void MainFrame::OnQuit(wxCommandEvent& event) {
@@ -96,17 +103,23 @@ void MainFrame::OnOpenFile(wxCommandEvent& event) {
 	}
 	wxString path = FileDialog.GetPath();
 	Shared::fileio.OpenFile(path);
-	m_grid->DeleteRows(0, Shared::fileio.info.nbSplits);
+	m_realGrid->DeleteRows(0, Shared::fileio.info.nbSplits);
+	m_gameGrid->DeleteRows(0, Shared::fileio.info.nbSplits);
 	Shared::fileio.GetInfo();
-	m_grid->InsertRows(0, Shared::fileio.info.nbSplits);
-	InitGrid();
-	m_grid->SetSize(wxSize(m_runPanel->GetSize()));
+	m_realGrid->InsertRows(0, Shared::fileio.info.nbSplits);
+	m_gameGrid->InsertRows(0, Shared::fileio.info.nbSplits);
+	InitRealGrid();
+	InitGameGrid();
+	m_realGrid->SetSize(wxSize(m_runPanel->GetSize()));
+	m_gameGrid->SetSize(wxSize(m_runPanel->GetSize()));
+	m_category->SetLabelText(Shared::fileio.info.GetTitle());
 
 	InitList();
 }
 
 void MainFrame::OnSaveFile(wxCommandEvent& event) {
-	// cool stuff happening here
+	// cool stuff happening here (not used yet, maybe ever)
+	// only added this in case i expand this to be a more general application to analyse splits
 }
 
 void MainFrame::OnShowUnfinished(wxCommandEvent& event) {
@@ -123,17 +136,22 @@ void MainFrame::InitList() {
 	wxListItem itemCol;
 	itemCol.SetText("Attempt n°");
 	m_listCtrl->InsertColumn(0, itemCol);
-	m_listCtrl->SetColumnWidth(0, 150);
+	m_listCtrl->SetColumnWidth(0, 120);
 
 	itemCol.SetText("Finished");
 	itemCol.SetAlign(wxLIST_FORMAT_CENTRE);
 	m_listCtrl->InsertColumn(1, itemCol);
-	m_listCtrl->SetColumnWidth(1, 150);
+	m_listCtrl->SetColumnWidth(1, 120);
 
-	itemCol.SetText("Final Time");
-	itemCol.SetAlign(wxLIST_FORMAT_RIGHT);
+	itemCol.SetText("Final Real Time");
+	itemCol.SetAlign(wxLIST_FORMAT_CENTRE);
 	m_listCtrl->InsertColumn(2, itemCol);
-	m_listCtrl->SetColumnWidth(2, 150);
+	m_listCtrl->SetColumnWidth(2, 120);
+
+	itemCol.SetText("Final Game Time");
+	itemCol.SetAlign(wxLIST_FORMAT_RIGHT);
+	m_listCtrl->InsertColumn(3, itemCol);
+	m_listCtrl->SetColumnWidth(3, 120);
 
 	m_listCtrl->Hide(); // Hiding the list control speeds up adding the runs.
 
@@ -145,7 +163,8 @@ void MainFrame::InitList() {
 			m_listCtrl->InsertItem(item);
 			m_listCtrl->SetItem(iter, 0, run.charID);
 			m_listCtrl->SetItem(iter, 1, "Yes");
-			m_listCtrl->SetItem(iter, 2, run.finishedTime);
+			m_listCtrl->SetItem(iter, 2, run.realTime);
+			m_listCtrl->SetItem(iter, 3, run.gameTime);
 			iter++;
 		}
 		else if (m_showUnfinished) {
@@ -154,36 +173,36 @@ void MainFrame::InitList() {
 			m_listCtrl->InsertItem(item);
 			m_listCtrl->SetItem(iter, 0, run.charID);
 			m_listCtrl->SetItem(iter, 1, "No");
-			m_listCtrl->SetItem(iter, 2, run.finishedTime);
+			m_listCtrl->SetItem(iter, 2, run.realTime);
+			m_listCtrl->SetItem(iter, 3, run.gameTime);
 			iter++;
 		}
 	}
 	m_listCtrl->Show();
 }
 
-void MainFrame::InitGrid() {
-	m_grid->ClearGrid();
-	m_grid->EnableEditing(false);
-	m_grid->EnableDragColSize(false);
-	m_grid->SetRowLabelSize(120);
-	m_grid->SetColSize(0, 120);
-	m_grid->SetColSize(1, 120);
-	m_grid->SetColSize(2, 120);
+void MainFrame::InitRealGrid() {
+	m_realGrid->ClearGrid();
+	m_realGrid->EnableEditing(false);
+	m_realGrid->SetRowLabelSize(160);
+	m_realGrid->SetColSize(0, 120);
+	m_realGrid->SetColSize(1, 120);
+	m_realGrid->SetColSize(2, 120);
 
-	m_grid->SetColLabelValue(0, wxString("Split Time"));
-	m_grid->SetColLabelValue(1, wxString("Segment Time"));
-	m_grid->SetColLabelValue(2, wxString("Best Time"));
+	m_realGrid->SetColLabelValue(0, wxString("Split Time"));
+	m_realGrid->SetColLabelValue(1, wxString("Segment Time"));
+	m_realGrid->SetColLabelValue(2, wxString("Best Time"));
 
 	Shared::fileio.GetSplitsNames();
 	int iter = 0;
 	for (std::string& split : Shared::fileio.namesVec) {
-		m_grid->SetRowLabelValue(iter, split);
+		m_realGrid->SetRowLabelValue(iter, split);
 		iter++;
 	}
 	iter = 0;
 	Shared::fileio.GetBestSplitsTimes();
-	for (std::string& best : Shared::fileio.bestSplitsVec) {
-		m_grid->SetCellValue(wxGridCellCoords(iter, 2), best);
+	for (std::string& best : Shared::fileio.bestSplitsRealVec) {
+		m_realGrid->SetCellValue(wxGridCellCoords(iter, 2), best);
 		iter++;
 	}
 	iter = 0;
@@ -191,34 +210,92 @@ void MainFrame::InitGrid() {
 	std::chrono::duration<double, std::milli> dur = std::chrono::duration<double, std::milli>::zero();
 	std::chrono::duration<double, std::milli> addDur = std::chrono::duration<double, std::milli>::zero();
 	for (std::string& time : Shared::fileio.splitsVec) {
-		m_grid->SetCellValue(wxGridCellCoords(iter, 0), time);
+		m_realGrid->SetCellValue(wxGridCellCoords(iter, 0), time);
 		dur = FileIO::sToDuration(time);
 		addDur += dur;
-		m_grid->SetCellValue(wxGridCellCoords(iter, 1), FileIO::durationToS(addDur));
+		m_realGrid->SetCellValue(wxGridCellCoords(iter, 1), FileIO::durationToS(addDur));
 		iter++;
 	}
 }
 
-void MainFrame::RefreshGrid(const char* id) {
+void MainFrame::RefreshRealGrid(const char* id) {
 	int iter = 0;
 	for (int i = 0; i < Shared::fileio.info.nbSplits; i++) {
-		m_grid->SetCellValue(wxGridCellCoords(i, 0), "");
-		m_grid->SetCellValue(wxGridCellCoords(i, 1), "");
+		m_realGrid->SetCellValue(wxGridCellCoords(i, 0), "");
+		m_realGrid->SetCellValue(wxGridCellCoords(i, 1), "");
 	}
 	Shared::fileio.GetSplitsTimes(id);
 	std::chrono::duration<double, std::milli> dur = std::chrono::duration<double, std::milli>::zero();
 	std::chrono::duration<double, std::milli> addDur = std::chrono::duration<double, std::milli>::zero();
 	for (std::string& time : Shared::fileio.splitsVec) {
-		m_grid->SetCellValue(wxGridCellCoords(iter, 0), time);
+		m_realGrid->SetCellValue(wxGridCellCoords(iter, 0), time);
 		dur = FileIO::sToDuration(time);
-		if (dur.count() > 6480000000 || dur.count() < -6480000000) { // 30 hours here because people who have 30 hours splits shalln't liveth
-			// i'm actually doing this because if a split has no time it will display as a huge number for some reason
-			dur = dur.zero();
-			m_grid->SetCellValue(wxGridCellCoords(iter, 1), "");
+		if (dur == dur.zero()) {
+			m_realGrid->SetCellValue(wxGridCellCoords(iter, 1), "");
 		}
 		else {
 			addDur += dur;
-			m_grid->SetCellValue(wxGridCellCoords(iter, 1), FileIO::durationToS(addDur));
+			m_realGrid->SetCellValue(wxGridCellCoords(iter, 1), FileIO::durationToS(addDur));
+		}
+		iter++;
+	}
+}
+
+void MainFrame::InitGameGrid() {
+	m_gameGrid->ClearGrid();
+	m_gameGrid->EnableEditing(false);
+	m_gameGrid->SetRowLabelSize(160);
+	m_gameGrid->SetColSize(0, 120);
+	m_gameGrid->SetColSize(1, 120);
+	m_gameGrid->SetColSize(2, 120);
+
+	m_gameGrid->SetColLabelValue(0, wxString("Split Time"));
+	m_gameGrid->SetColLabelValue(1, wxString("Segment Time"));
+	m_gameGrid->SetColLabelValue(2, wxString("Best Time"));
+
+	Shared::fileio.GetSplitsNames();
+	int iter = 0;
+	for (std::string& split : Shared::fileio.namesVec) {
+		m_gameGrid->SetRowLabelValue(iter, split);
+		iter++;
+	}
+	iter = 0;
+	Shared::fileio.GetBestSplitsTimes();
+	for (std::string& best : Shared::fileio.bestSplitsGameVec) {
+		m_gameGrid->SetCellValue(wxGridCellCoords(iter, 2), best);
+		iter++;
+	}
+	iter = 0;
+	Shared::fileio.GetSplitsTimes("1", true);
+	std::chrono::duration<double, std::milli> dur = std::chrono::duration<double, std::milli>::zero();
+	std::chrono::duration<double, std::milli> addDur = std::chrono::duration<double, std::milli>::zero();
+	for (std::string& time : Shared::fileio.splitsVec) {
+		m_gameGrid->SetCellValue(wxGridCellCoords(iter, 0), time);
+		dur = FileIO::sToDuration(time);
+		addDur += dur;
+		m_gameGrid->SetCellValue(wxGridCellCoords(iter, 1), FileIO::durationToS(addDur));
+		iter++;
+	}
+}
+
+void MainFrame::RefreshGameGrid(const char* id) {
+	int iter = 0;
+	for (int i = 0; i < Shared::fileio.info.nbSplits; i++) {
+		m_gameGrid->SetCellValue(wxGridCellCoords(i, 0), "");
+		m_gameGrid->SetCellValue(wxGridCellCoords(i, 1), "");
+	}
+	Shared::fileio.GetSplitsTimes(id, true);
+	std::chrono::duration<double, std::milli> dur = std::chrono::duration<double, std::milli>::zero();
+	std::chrono::duration<double, std::milli> addDur = std::chrono::duration<double, std::milli>::zero();
+	for (std::string& time : Shared::fileio.splitsVec) {
+		m_gameGrid->SetCellValue(wxGridCellCoords(iter, 0), time);
+		dur = FileIO::sToDuration(time);
+		if (dur == dur.zero()) {
+			m_gameGrid->SetCellValue(wxGridCellCoords(iter, 1), "");
+		}
+		else {
+			addDur += dur;
+			m_gameGrid->SetCellValue(wxGridCellCoords(iter, 1), FileIO::durationToS(addDur));
 		}
 		iter++;
 	}

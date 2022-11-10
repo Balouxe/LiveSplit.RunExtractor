@@ -20,7 +20,8 @@ struct RunInfo {
 	int id;
 	const char* charID;
 	bool finished;
-	const char* finishedTime;
+	const char* realTime;
+	const char* gameTime;
 };
 
 class FileIO
@@ -32,14 +33,15 @@ public:
 	bool GetAllRuns();
 	bool GetSplitsNames();
 	bool GetBestSplitsTimes();
-	bool GetSplitsTimes(std::string id);
+	bool GetSplitsTimes(std::string id, bool gameTime = false);
 
 	static std::chrono::duration<double, std::milli> sToDuration(std::string& s);
 	static std::string durationToS(std::chrono::duration<double, std::milli> dur);
 
 	std::vector<RunInfo> runsVec;
 	std::vector<std::string> namesVec;
-	std::vector<std::string> bestSplitsVec;
+	std::vector<std::string> bestSplitsRealVec;
+	std::vector<std::string> bestSplitsGameVec;
 	std::vector<std::string> splitsVec;
 	SplitsInfo info;
 private:
