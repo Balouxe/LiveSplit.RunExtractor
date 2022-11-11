@@ -2,9 +2,13 @@
 Little tool allowing you to fetch the splits times of any run you completed or not.
 
 # Usage
-Downloadthe latest release, open it.
+Download the latest release, open it.
 Select the your splits file and it should display on the left a list of all of your attempts and on the right your splits.
 If you don't want to see the runs that you haven't finished, click on Options on the top bar, and click on "Show Unfinished runs"
+
+# Known bugs
+If you deleted a split, old runs that used this splits will show up without the time of the split (obviously) and the final time will be faster than it actually is
+I don't think I can really do anything about it
 
 # Contributing
 Requirements: wxWidgets 3.2.1 or higher. Have the wxWidgets folder set as an environnement variable called WXWIN.
